@@ -12,6 +12,10 @@ ACTION="$ACTION_ROOT/run.sh"
 FAKE_BIN="$ROOT/tests/action/fake-bin"
 SYNC_TOKEN="fv_$(printf '%064d' 0)"
 
+# GitHub's browser uploader stores test fixtures as regular files. Make the
+# deterministic curl shim executable before putting it on PATH.
+chmod +x "$FAKE_BIN/curl"
+
 fail() {
   printf 'FAIL: %s\n' "$1" >&2
   if [ -n "${RUN_LOG:-}" ] && [ -f "$RUN_LOG" ]; then
@@ -62,14 +66,13 @@ run_case() {
   mkdir -p "$workspace/.git"
 
   RUN_SUMMARY="$case_dir/summary.md"
-  # GitHub's browser uploader stores test fixtures as regular files. Make the
-# deterministic curl shim executable before putting it on PATH.
-chmod +x "$FAKE_BIN/curl"
-RUN_OUTPUT="$case_dir/output.txt"
+  RUN_OUTPUT="$case_dir/output.txt"
   RUN_LOG="$case_dir/action.log"
   RUN_REPORT="$workspace/readiness.json"
   RUN_CALLS="$state_dir/calls.log"
 
+  # Leave enough whole-second headroom for a 202 -> 302 polling transition
+  # when the test starts immediately before a clock tick on GitHub runners.
   set +e
   env \
     PATH="$FAKE_BIN:$PATH" \
@@ -89,7 +92,7 @@ RUN_OUTPUT="$case_dir/output.txt"
     FORGEVAULT_TOKEN="$SYNC_TOKEN" \
     FORGEVAULT_ENDPOINT='https://forge-vault.test/functions/v1/ingest-readiness' \
     FORGEVAULT_PRODUCT='northstar-desktop-agent' \
-    FORGEVAULT_SBOM_MAX_WAIT_SECONDS='1' \
+    FORGEVAULT_SBOM_MAX_WAIT_SECONDS='3' \
     FORGEVAULT_SBOM_POLL_INTERVAL_SECONDS='0' \
     FORGEVAULT_APP_URL='https://forge-vault-self.vercel.app' \
     bash "$ACTION" > "$RUN_LOG" 2>&1
