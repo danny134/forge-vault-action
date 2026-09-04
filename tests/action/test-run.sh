@@ -114,7 +114,7 @@ if ! bash -n "$ACTION"; then
   fail 'action runner has invalid bash syntax'
 fi
 
-if grep -Eq 'dependency-graph/sbom["[:space:]]' "$ACTION_ROOT/action.yml" "$ACTION"; then
+if grep -R -E 'dependency-graph/sbom(["?[:space:]]|$)' "$ACTION_ROOT" --include='*.sh' --include='action.yml' >/dev/null 2>&1; then
   fail 'deprecated synchronous SBOM endpoint is present in production action files'
 fi
 
@@ -161,6 +161,18 @@ assert_contains 'Local readiness completed' "$RUN_SUMMARY" 'summary should prese
 run_case minimal sbom_unavailable false
 assert_eq 'NOT_AVAILABLE' "$(report_status sbom)" 'SBOM 404 should be not available'
 assert_eq 'NOT_AVAILABLE' "$(report_status dependency-graph)" 'dependency graph 404 should be not available'
+
+run_case minimal sbom_server_error false
+assert_eq 'UNKNOWN' "$(report_status sbom)" 'SBOM generation 5xx should be unknown'
+assert_eq 'UNKNOWN' "$(report_status dependency-graph)" 'dependency graph generation 5xx should be unknown'
+
+run_case minimal sbom_fetch_server_error false
+assert_eq 'UNKNOWN' "$(report_status sbom)" 'SBOM fetch 5xx should be unknown'
+assert_eq 'UNKNOWN' "$(report_status dependency-graph)" 'dependency graph fetch 5xx should be unknown'
+
+run_case minimal sbom_download_server_error false
+assert_eq 'UNKNOWN' "$(report_status sbom)" 'temporary SBOM download 5xx should be unknown'
+assert_eq 'UNKNOWN' "$(report_status dependency-graph)" 'temporary download dependency graph 5xx should be unknown'
 
 run_case minimal network_fail false
 assert_eq 'UNKNOWN' "$(report_status sbom)" 'network failure should be unknown'
