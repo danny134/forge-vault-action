@@ -41,6 +41,7 @@ case "$url" in
     case "$mode" in
       sbom_forbidden) status='403'; body='{"message":"forbidden"}' ;;
       sbom_unavailable) status='404'; body='{"message":"not found"}' ;;
+      sbom_server_error) status='503'; body='{"message":"service unavailable"}' ;;
       *)
         status='201'
         body='{"sbom_url":"https://api.github.test/repos/acme/good/dependency-graph/sbom/fetch-report/test-id"}'
@@ -55,7 +56,8 @@ case "$url" in
     printf '%s\n' "$fetch_count" > "$fetch_count_file"
     case "$mode" in
       sbom_processing) status='202'; body='' ;;
-      sbom_ready|sync_success|sync_fail)
+      sbom_fetch_server_error) status='503'; body='{"message":"service unavailable"}' ;;
+      sbom_ready|sbom_download_server_error|sync_success|sync_fail)
         if [ "$fetch_count" -eq 1 ]; then
           status='202'; body=''
         else
@@ -66,8 +68,10 @@ case "$url" in
     esac
     ;;
   https://objects.githubusercontent.com/*)
-    status='200'
-    body='{"spdxVersion":"SPDX-2.3","packages":[]}'
+    case "$mode" in
+      sbom_download_server_error) status='503'; body='{"message":"service unavailable"}' ;;
+      *) status='200'; body='{"spdxVersion":"SPDX-2.3","packages":[]}' ;;
+    esac
     ;;
   */code-scanning/alerts*)
     case "$mode" in
