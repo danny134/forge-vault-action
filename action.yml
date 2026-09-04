@@ -1,127 +1,51 @@
 name: 'ForgeVault CRA Readiness'
-description: 'CRA product-security readiness check — security policy, SBOM, dependency graph, incident owner. No exfiltration by default.'
+description: 'Cyber Resilience Act readiness checks for GitHub repositories.'
 branding:
   icon: 'shield'
   color: 'blue'
 inputs:
   sync:
-    description: 'If true, send sanitized summary to ForgeVault SaaS (requires token)'
+    description: 'Opt-in: send the sanitized readiness summary to ForgeVault.'
     required: false
     default: 'false'
   token:
-    description: 'ForgeVault sync token (only if sync true)'
+    description: 'ForgeVault action token. Used only when sync is true.'
     required: false
   endpoint:
-    description: 'ForgeVault readiness ingestion endpoint'
+    description: 'ForgeVault readiness ingestion endpoint. Override only for an approved deployment.'
     required: false
     default: 'https://rhxokpmfxnwtuxoqmalf.supabase.co/functions/v1/ingest-readiness'
   product:
-    description: 'Product identifier for sync'
+    description: 'ForgeVault product identifier used for an opt-in sync.'
     required: false
+  fail-on:
+    description: 'Optional gate: none, error, gap, or unknown. Defaults to informational output.'
+    required: false
+    default: 'none'
+outputs:
+  detected-count:
+    description: 'Number of checks with positively detected evidence.'
+    value: ${{ steps.readiness.outputs['detected-count'] }}
+  gap-count:
+    description: 'Number of checks where evidence was not detected.'
+    value: ${{ steps.readiness.outputs['gap-count'] }}
+  unknown-count:
+    description: 'Number of checks that could not be verified.'
+    value: ${{ steps.readiness.outputs['unknown-count'] }}
+  report-json:
+    description: 'Compact JSON readiness report for later workflow steps.'
+    value: ${{ steps.readiness.outputs['report-json'] }}
 runs:
   using: 'composite'
   steps:
-    - name: Run readiness checks
+    - name: Run ForgeVault CRA Readiness
+      id: readiness
       shell: bash
       env:
         FORGEVAULT_SYNC: ${{ inputs.sync }}
         FORGEVAULT_TOKEN: ${{ inputs.token }}
-        FORGEVAULT_PRODUCT: ${{ inputs.product }}
         FORGEVAULT_ENDPOINT: ${{ inputs.endpoint }}
+        FORGEVAULT_PRODUCT: ${{ inputs.product }}
+        FORGEVAULT_FAIL_ON: ${{ inputs['fail-on'] }}
         GH_TOKEN: ${{ github.token }}
-      run: |
-        set -euo pipefail
-        command -v jq >/dev/null 2>&1 || { echo "::error::ForgeVault CRA Readiness requires jq on the runner."; exit 1; }
-        command -v curl >/dev/null 2>&1 || { echo "::error::ForgeVault CRA Readiness requires curl on the runner."; exit 1; }
-        echo "## PRODUCT SECURITY READINESS" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
-        echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-        checks=0
-        passed=0
-        checks_json='[]'
-        record_check() {
-          local name="$1"
-          shift
-          local result="not_configured"
-          if "$@"; then
-            result="detected"
-            passed=$((passed + 1))
-          fi
-          checks=$((checks + 1))
-          if [ "$result" = "detected" ]; then
-            echo "| $name | ✓ detected |" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "| $name | ⚠ not configured |" >> "$GITHUB_STEP_SUMMARY"
-          fi
-          checks_json="$(jq -c --arg name "$name" --arg result "$result" '. + [{name: $name, result: $result}]' <<< "$checks_json")"
-        }
-        has_security_policy() { [ -f SECURITY.md ] || [ -f .github/SECURITY.md ]; }
-        has_sbom() { [ -f sbom.spdx.json ] || [ -f sbom.cyclonedx.json ] || [ -f sbom.json ]; }
-        has_dependency_graph() {
-          [ -n "${GH_TOKEN:-}" ] || return 1
-          [ -n "${GITHUB_REPOSITORY:-}" ] || return 1
-          curl --fail --silent --show-error --max-time 10 \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H 'Accept: application/vnd.github+json' \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/dependency-graph/sbom" \
-            | jq -e '.sbom and (.sbom.spdxVersion or .sbom.bomFormat)' >/dev/null
-        }
-        has_dependabot() { [ -f .github/dependabot.yml ] || [ -f .github/dependabot.yaml ]; }
-        has_code_scanning() {
-          find .github/workflows -maxdepth 1 -type f \( -name '*.yml' -o -name '*.yaml' \) -print 2>/dev/null \
-            | xargs grep -Eil 'codeql|code-scanning' 2>/dev/null | grep -q .
-        }
-        has_security_contact() {
-          find . -maxdepth 3 -type f -name '*.md' -print 2>/dev/null \
-            | xargs grep -Eiq 'security contact|security@|report (a )?vulnerabilit|security issue'
-        }
-        has_product_mapping() { [ -f .forgevault.yml ] || [ -f .forgevault.yaml ]; }
-        has_incident_owner() {
-          grep -Eiq '(^|[[:space:]])(incident_?owner|owner):[[:space:]]*[^#[:space:]]' .forgevault.yml .forgevault.yaml 2>/dev/null
-        }
-        record_check "Security policy" has_security_policy
-        record_check "SBOM artifact/file" has_sbom
-        record_check "Dependency graph available" has_dependency_graph
-        record_check "Dependabot config" has_dependabot
-        record_check "Code scanning workflow" has_code_scanning
-        record_check "Security contact" has_security_contact
-        record_check "Product mapping config" has_product_mapping
-        record_check "Incident owner config" has_incident_owner
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "Operational gaps: $((checks - passed))" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "Need product-level evidence and live CRA case management? Install ForgeVault." >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        jq -n \
-          --argjson checks "$checks_json" \
-          --arg product "${FORGEVAULT_PRODUCT}" \
-          --arg repository "${GITHUB_REPOSITORY:-}" \
-          --arg commit_sha "${GITHUB_SHA:-}" \
-          --arg run_id "${GITHUB_RUN_ID:-}" \
-          --arg run_attempt "${GITHUB_RUN_ATTEMPT:-}" \
-          --arg idempotency_key "${GITHUB_REPOSITORY:-}:${GITHUB_RUN_ID:-}:${GITHUB_RUN_ATTEMPT:-}:${FORGEVAULT_PRODUCT}" \
-          '{product: $product, repository: $repository, commit_sha: $commit_sha, run_id: $run_id, run_attempt: $run_attempt, idempotency_key: $idempotency_key, checks: $checks}' \
-          > readiness.json
-        echo "Checks: $checks, passed: $passed, gaps: $((checks - passed))"
-        if [ "$(printf '%s' "${FORGEVAULT_SYNC:-false}" | tr '[:upper:]' '[:lower:]')" = "true" ]; then
-          if [ -z "${FORGEVAULT_TOKEN}" ] || [ -z "${FORGEVAULT_PRODUCT}" ]; then
-            echo "::error::sync=true requires both token and product inputs."
-            exit 1
-          fi
-          if [ -z "${FORGEVAULT_ENDPOINT}" ]; then
-            echo "::error::sync=true requires a ForgeVault endpoint."
-            exit 1
-          fi
-          echo "Syncing sanitized summary (no source code)..."
-          sync_status="$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' \
-            -X POST \
-            -H "Authorization: Bearer ${FORGEVAULT_TOKEN}" \
-            -H 'Content-Type: application/json' \
-            --data-binary @readiness.json \
-            "${FORGEVAULT_ENDPOINT}")"
-          case "$sync_status" in
-            2*) echo "Readiness summary synced." ;;
-            *) echo "::error::ForgeVault readiness sync failed with HTTP ${sync_status}."; exit 1 ;;
-          esac
-        fi
+      run: bash "${GITHUB_ACTION_PATH}/run.sh"
