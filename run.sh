@@ -691,9 +691,9 @@ summary_line '> Cyber Resilience Act readiness checks for GitHub repositories.'
 summary_line ''
 summary_line '## Run'
 summary_line ''
-summary_line "- **Repository:** `${REPOSITORY:-unavailable}`"
-summary_line "- **Observed:** `${OBSERVED_AT}`"
-summary_line "- **Action version:** `v${ACTION_VERSION}`"
+summary_line "- **Repository:** \`${REPOSITORY:-unavailable}\`"
+summary_line "- **Observed:** \`${OBSERVED_AT}\`"
+summary_line "- **Action version:** \`v${ACTION_VERSION}\`"
 summary_line ''
 summary_line '## Product security'
 summary_line ''
