@@ -391,7 +391,7 @@ check_sbom() {
       return 0
       ;;
     5*)
-      set_sbom_result 'NOT_AVAILABLE' 'GitHub SBOM generation was temporarily unavailable.' "generate-report returned $API_STATUS" 'github-rest-api' 'Retry the workflow after GitHub API availability is restored.' 'https://www.githubstatus.com/'
+      set_sbom_result 'UNKNOWN' 'GitHub SBOM generation could not be verified because GitHub returned a temporary server error.' "generate-report returned $API_STATUS" 'github-rest-api' 'Retry the workflow after GitHub API availability is restored.' 'https://www.githubstatus.com/'
       return 0
       ;;
     201) ;;
@@ -446,7 +446,7 @@ check_sbom() {
           return 0
         fi
         if [ "$DOWNLOAD_STATUS" != '200' ]; then
-          set_sbom_result 'NOT_AVAILABLE' 'GitHub generated the report but its temporary download was unavailable.' "temporary SBOM download returned $DOWNLOAD_STATUS" 'github-rest-api' 'Retry the workflow to request a fresh SBOM report.' 'https://docs.github.com/en/rest/dependency-graph/sboms'
+        case "$DOWNLOAD_STATUS" in 403) set_sbom_result 'NOT_AUTHORIZED' 'GitHub denied access to the temporary SBOM download.' 'Temporary download returned 403' 'github-rest-api' 'Grant contents: read to the job token and retry.' 'https://docs.github.com/en/rest/dependency-graph/sboms' ;; 404) set_sbom_result 'NOT_AVAILABLE' 'GitHub generated the report but its temporary download is no longer available.' 'Temporary download returned 404' 'github-rest-api' 'Request a fresh report by rerunning the workflow.' 'https://docs.github.com/en/rest/dependency-graph/sboms' ;; 5*) set_sbom_result 'UNKNOWN' 'The temporary SBOM download could not be verified because GitHub returned a temporary server error.' "temporary SBOM download returned $DOWNLOAD_STATUS" 'github-rest-api' 'Retry the workflow to request a fresh SBOM report.' 'https://www.githubstatus.com/' ;; *) set_sbom_result 'ERROR' 'GitHub returned an unexpected response for the temporary SBOM download.' "temporary SBOM download returned $DOWNLOAD_STATUS" 'github-rest-api' 'Inspect the GitHub API response and rerun the workflow.' 'https://docs.github.com/en/rest/dependency-graph/sboms' ;; esac
           return 0
         fi
         if jq -e 'type == "object" and ((.spdxVersion? != null) or (.bomFormat? != null))' "$DOWNLOAD_BODY" >/dev/null 2>&1; then
@@ -465,7 +465,7 @@ check_sbom() {
         return 0
         ;;
       5*)
-        set_sbom_result 'NOT_AVAILABLE' 'GitHub SBOM retrieval was temporarily unavailable.' "fetch-report returned $API_STATUS" 'github-rest-api' 'Retry the workflow after GitHub API availability is restored.' 'https://www.githubstatus.com/'
+        set_sbom_result 'UNKNOWN' 'GitHub SBOM retrieval could not be verified because GitHub returned a temporary server error.' "fetch-report returned $API_STATUS" 'github-rest-api' 'Retry the workflow after GitHub API availability is restored.' 'https://www.githubstatus.com/'
         return 0
         ;;
       *)
