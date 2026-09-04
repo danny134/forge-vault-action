@@ -1,0 +1,28 @@
+name: ForgeVault Action tests
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out Action repository
+        uses: actions/checkout@v6
+
+      - name: Run fixture and privacy tests
+        run: bash tests/action/test-run.sh
+
+      - name: Validate metadata
+        run: |
+          ruby -e "require 'yaml'; YAML.load_file('action.yml'); puts 'action.yml: OK'"
+
+      - name: Dogfood the Action
+        uses: ./
