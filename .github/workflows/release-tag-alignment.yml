@@ -1,0 +1,32 @@
+name: Align ForgeVault release tags
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_sha:
+        description: Reviewed commit that contains the release fix
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  align:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Align v1 and v1.1.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ inputs.target_sha }}
+        run: |
+          set -euo pipefail
+          repo="${GITHUB_REPOSITORY}"
+          resolved_sha="$(gh api "repos/${repo}/commits/${TARGET_SHA}" --jq ".sha")"
+          test "$resolved_sha" = "$TARGET_SHA"
+          gh api "repos/${repo}/git/ref/tags/v1.1.0" --jq ".object.sha" >/dev/null
+          gh api --method PATCH "repos/${repo}/git/refs/tags/v1.1.0" -f "sha=${TARGET_SHA}" -F force=true >/dev/null
+          gh api --method PATCH "repos/${repo}/git/refs/tags/v1" -f "sha=${TARGET_SHA}" -F force=true >/dev/null
+          test "$(gh api "repos/${repo}/git/ref/tags/v1.1.0" --jq ".object.sha")" = "$TARGET_SHA"
+          test "$(gh api "repos/${repo}/git/ref/tags/v1" --jq ".object.sha")" = "$TARGET_SHA"
+          echo "v1 and v1.1.0 now point to ${TARGET_SHA}"
