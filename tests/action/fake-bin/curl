@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+mode="${FAKE_CURL_MODE:-default}"
+state_dir="${FAKE_CURL_STATE_DIR:?FAKE_CURL_STATE_DIR is required}"
+mkdir -p "$state_dir"
+
+body_file=''
+headers_file=''
+data_file=''
+url=''
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --output|-o) body_file="$2"; shift 2 ;;
+    --dump-header|-D) headers_file="$2"; shift 2 ;;
+    --write-out|-w) shift 2 ;;
+    --data-binary) data_file="${2#@}"; shift 2 ;;
+    --config|--max-time|--retry|--retry-delay|--retry-max-time|--header|-H|--request|-X)
+      shift 2
+      ;;
+    --silent|--show-error|--location|--fail) shift ;;
+    *) url="$1"; shift ;;
+  esac
+done
+
+calls_file="$state_dir/calls.log"
+printf '%s\n' "$url" >> "$calls_file"
+
+if [ "$mode" = 'network_fail' ]; then
+  exit 7
+fi
+
+status='200'
+body='{}'
+location=''
+
+case "$url" in
+  */dependency-graph/sbom/generate-report)
+    case "$mode" in
+      sbom_forbidden) status='403'; body='{"message":"forbidden"}' ;;
+      sbom_unavailable) status='404'; body='{"message":"not found"}' ;;
+      *)
+        status='201'
+        body='{"sbom_url":"https://api.github.test/repos/acme/good/dependency-graph/sbom/fetch-report/test-id"}'
+        ;;
+    esac
+    ;;
+  */dependency-graph/sbom/fetch-report/*)
+    fetch_count_file="$state_dir/fetch.count"
+    fetch_count='0'
+    if [ -f "$fetch_count_file" ]; then fetch_count="$(cat "$fetch_count_file")"; fi
+    fetch_count=$((fetch_count + 1))
+    printf '%s\n' "$fetch_count" > "$fetch_count_file"
+    case "$mode" in
+      sbom_processing) status='202'; body='' ;;
+      sbom_ready|sync_success|sync_fail)
+        if [ "$fetch_count" -eq 1 ]; then
+          status='202'; body=''
+        else
+          status='302'; body=''; location='https://objects.githubusercontent.com/forge-vault-test-sbom.json'
+        fi
+        ;;
+      *) status='404'; body='{"message":"not found"}' ;;
+    esac
+    ;;
+  https://objects.githubusercontent.com/*)
+    status='200'
+    body='{"spdxVersion":"SPDX-2.3","packages":[]}'
+    ;;
+  */code-scanning/alerts*)
+    case "$mode" in
+      code_forbidden|sbom_forbidden) status='403'; body='{"message":"forbidden"}' ;;
+      code_unavailable) status='404'; body='{"message":"not found"}' ;;
+      *) status='200'; body='[]' ;;
+    esac
+    ;;
+  */contents/*)
+    case "$mode" in
+      contents_forbidden|sbom_forbidden) status='403'; body='{"message":"forbidden"}' ;;
+      *) status='404'; body='{"message":"not found"}' ;;
+    esac
+    ;;
+  */ingest-readiness)
+    case "$mode" in
+      sync_success) status='201'; body='{"ok":true,"snapshot_id":"fixture"}' ;;
+      sync_fail) status='503'; body='{"error":"fixture outage"}' ;;
+      *) status='404'; body='{"message":"not found"}' ;;
+    esac
+    ;;
+esac
+
+if [ -n "$body_file" ] && [ "$body_file" != '/dev/null' ]; then
+  printf '%s' "$body" > "$body_file"
+fi
+
+if [ -n "$headers_file" ]; then
+  : > "$headers_file"
+  if [ -n "$location" ]; then
+    printf 'HTTP/1.1 302 Found\r\nLocation: %s\r\n\r\n' "$location" > "$headers_file"
+  else
+    printf 'HTTP/1.1 %s\r\n\r\n' "$status" > "$headers_file"
+  fi
+fi
+
+case "$url" in
+  */ingest-readiness)
+    if [ -n "$data_file" ] && [ -f "$data_file" ]; then
+      cp "$data_file" "$state_dir/sync-body.json"
+    fi
+    ;;
+esac
+
+printf '%s' "$status"
