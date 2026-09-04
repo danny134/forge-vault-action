@@ -62,7 +62,10 @@ run_case() {
   mkdir -p "$workspace/.git"
 
   RUN_SUMMARY="$case_dir/summary.md"
-  RUN_OUTPUT="$case_dir/output.txt"
+  # GitHub's browser uploader stores test fixtures as regular files. Make the
+# deterministic curl shim executable before putting it on PATH.
+chmod +x "$FAKE_BIN/curl"
+RUN_OUTPUT="$case_dir/output.txt"
   RUN_LOG="$case_dir/action.log"
   RUN_REPORT="$workspace/readiness.json"
   RUN_CALLS="$state_dir/calls.log"
