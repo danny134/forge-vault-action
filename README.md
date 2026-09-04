@@ -116,7 +116,7 @@ still completes.
 | Code Scanning alerts fallback          | `security-events: read`                      | Distinguishes API access from a missing Code Scanning result.        |
 | Optional ForgeVault sync               | A ForgeVault action token in a GitHub Secret | Sends only the documented sanitized summary when explicitly enabled. |
 
-No write permission is required. See the full [token permission map](../docs/GITHUB_TOKEN_PERMISSIONS.md).
+No write permission is required. See the full [token permission map](docs/GITHUB_TOKEN_PERMISSIONS.md).
 
 ## Understanding the results
 
@@ -144,7 +144,7 @@ With the default `sync: false`:
 - it writes a local `readiness.json` report containing check results and GitHub run metadata.
 
 The Action reads only the known paths described in the [privacy and sync
-contract](../docs/PRIVACY_AND_SYNC.md). GitHub API responses are used for the
+contract](docs/PRIVACY_AND_SYNC.md). GitHub API responses are used for the
 local result and are never forwarded to ForgeVault by default.
 
 ## Optional ForgeVault sync
@@ -167,7 +167,7 @@ failure produces a warning but does not discard the local readiness result.
 The endpoint override is intended only for an approved ForgeVault deployment;
 the default is the current production ingestion endpoint.
 
-See the exact payload in [PRIVACY_AND_SYNC.md](../docs/PRIVACY_AND_SYNC.md).
+See the exact payload in [PRIVACY_AND_SYNC.md](docs/PRIVACY_AND_SYNC.md).
 
 ## ForgeVault Pro
 
