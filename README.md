@@ -1,5 +1,9 @@
 # ForgeVault CRA Readiness
 
+<p>
+  <img src="assets/forgevault-mark.svg" alt="ForgeVault mark" width="56" height="56" />
+</p>
+
 > Cyber Resilience Act readiness checks for GitHub repositories.
 
 > [!NOTE]
