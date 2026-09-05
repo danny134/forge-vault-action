@@ -35,6 +35,9 @@ jobs:
           printf '%s\n' \
             '# Fictional private reporting route for the public demo run' \
             'Report security issues privately to security-team@example.invalid.' > .github/SECURITY.md
+          printf '%s\n' \
+            '# Fictional private reporting route for the public demo run' \
+            'Use the private security team at security-team@example.invalid.' > SECURITY.md
 
       - name: Run ForgeVault CRA Readiness
         uses: danny134/forge-vault-action@v1
