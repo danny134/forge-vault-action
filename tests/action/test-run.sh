@@ -127,7 +127,7 @@ assert_eq '0' "$(report_count gaps)" 'ready fixture gap count'
 assert_eq '0' "$(report_count unknown)" 'ready fixture unknown count'
 assert_contains 'Cyber Resilience Act' "$RUN_SUMMARY" 'summary should expand CRA'
 assert_contains 'Private by default' "$RUN_SUMMARY" 'summary should contain the trust statement'
-assert_contains 'Open ForgeVault Pro' "$RUN_SUMMARY" 'summary should contain the Pro CTA'
+assert_contains 'CRA Article 14 reporting obligations' "$RUN_SUMMARY" 'summary should contain the CRA timing context'; assert_contains 'Run a CRA incident drill in ForgeVault' "$RUN_SUMMARY" 'summary should contain the incident drill CTA'
 assert_not_contains 'ingest-readiness' "$RUN_CALLS" 'sync=false must not call ForgeVault'
 
 run_case minimal sbom_processing false
