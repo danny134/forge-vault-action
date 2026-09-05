@@ -1,0 +1,42 @@
+name: ForgeVault live demo
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: read
+
+jobs:
+  readiness:
+    name: Fictional CRA readiness example
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the Action repository
+        uses: actions/checkout@v6
+
+      - name: Add fictional demo evidence
+        shell: bash
+        run: |
+          mkdir -p .github/workflows .github
+          printf '%s\n' \
+            'product: atlas-desktop-agent-demo' \
+            'incident_owner: security-team@example.invalid' > .forgevault.yml
+          printf '%s\n' \
+            '{"spdxVersion":"SPDX-2.3","name":"Atlas Desktop Agent demo","packages":[]}' > sbom.spdx.json
+          printf '%s\n' \
+            'version: 2' \
+            'updates: []' > .github/dependabot.yml
+          printf '%s\n' \
+            '# Fictional CodeQL evidence for the public demo run' \
+            'name: Fictional CodeQL workflow' \
+            '# codeql' > .github/workflows/code-scanning-demo.yml
+          printf '%s\n' \
+            '# Fictional private reporting route for the public demo run' \
+            'Report security issues privately to security-team@example.invalid.' > .github/SECURITY.md
+
+      - name: Run ForgeVault CRA Readiness
+        uses: danny134/forge-vault-action@v1
+        with:
+          fail-on: none
