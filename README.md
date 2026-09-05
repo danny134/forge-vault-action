@@ -2,24 +2,54 @@
 
 > Cyber Resilience Act readiness checks for GitHub repositories.
 
-**Private by default:** the check runs inside GitHub Actions. No source code is
-uploaded to ForgeVault unless you explicitly enable the optional SaaS sync.
+> [!NOTE]
+> **CRA Article 14 reporting obligations start 11 September 2026.**
+> [Official timing: Regulation (EU) 2024/2847, Article 71](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R2847-20241120)
+>
+> <!-- After 11 September 2026, replace the sentence above with: **CRA Article 14 reporting obligations are now in force.** -->
+
+**Private by default — no source code uploaded by default.** The check runs
+inside GitHub Actions. No source code is uploaded to ForgeVault unless you
+explicitly enable the optional SaaS sync.
 
 [![GitHub Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-ForgeVault%20CRA%20Readiness-2088FF?logo=github)](https://github.com/marketplace/actions/forgevault-cra-readiness)
 [![Latest release](https://img.shields.io/github/v/release/danny134/forge-vault-action?sort=semver)](https://github.com/danny134/forge-vault-action/releases)
 [![License](https://img.shields.io/github/license/danny134/forge-vault-action)](LICENSE)
 
-## What it does
+[Run a CRA incident drill](https://forge-vault-self.vercel.app/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_incident_drill) · [Open ForgeVault](https://forge-vault-self.vercel.app/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_readiness) · [View live demo](https://github.com/danny134/forge-vault-action/actions/workflows/live-demo.yml)
 
-ForgeVault CRA Readiness gives engineering and product-security teams a fast,
-repository-level view of evidence that supports Cyber Resilience Act readiness.
-It detects operational signals in the checked-out repository and, where
-permission allows, uses GitHub's read-only APIs. It does not determine whether
-a product is legally in scope or compliant with the CRA.
+## Not another CRA scanner
 
-The free Action is the repository entry point to [ForgeVault Pro](https://forge-vault-self.vercel.app/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_readiness), where teams can connect repositories to software products and manage evidence and human-reviewed CRA workflows.
+ForgeVault Readiness is the free, repository-level entry point for seeing which
+technical and operational signals are present in a GitHub repository. It is a
+useful first step, not a legal determination or a promise of compliance.
 
-## Example result
+ForgeVault Pro adds the product-level operating layer:
+
+- product mapping
+- security signal assessment
+- 24h/72h workflows
+- evidence timelines
+- reporting preparation
+- immutable audit history
+
+| Free Action | ForgeVault Pro |
+| --- | --- |
+| Repository-level checks | Product mapping across repositories |
+| Private GitHub Job Summary | Security signal assessment |
+| Evidence gaps and next steps | 24h/72h workflows and evidence timelines |
+| Optional sanitized sync | Reporting preparation and immutable audit history |
+
+## See a real GitHub Job Summary
+
+[View the live demo workflow and its successful runs →](https://github.com/danny134/forge-vault-action/actions/workflows/live-demo.yml)
+
+The example below is a successful ForgeVault Action result. It is designed to
+show the output in seconds, before you read the implementation details.
+
+![ForgeVault GitHub Job Summary example](assets/forge-vault-job-summary.png)
+
+If images are blocked, the same example is available as text:
 
 ```text
 FORGEVAULT CRA READINESS
@@ -42,18 +72,28 @@ Result
 This is a readiness report, not a legal compliance determination.
 ```
 
+## What it does
+
+ForgeVault CRA Readiness gives engineering and product-security teams a fast,
+repository-level view of evidence that supports Cyber Resilience Act readiness.
+It detects operational signals in the checked-out repository and, where
+permission allows, uses GitHub's read-only APIs. It does not determine whether
+a product is legally in scope or compliant with the CRA.
+
+The free Action is the repository entry point to [ForgeVault Pro](https://forge-vault-self.vercel.app/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_readiness), where teams can connect repositories to software products and manage evidence and human-reviewed CRA workflows.
+
 ## Checks
 
 The Action uses one canonical result model for every check:
 
-| Status           | Meaning                                                                   |
-| ---------------- | ------------------------------------------------------------------------- |
-| `DETECTED`       | Positive evidence was found.                                              |
-| `NOT_DETECTED`   | The check ran successfully but found no supported evidence.               |
-| `NOT_AVAILABLE`  | GitHub does not expose the feature in this repository or plan.            |
-| `NOT_AUTHORIZED` | The current token does not have the permission needed to check it.        |
-| `UNKNOWN`        | The result could not be determined, for example because an API timed out. |
-| `ERROR`          | An unexpected technical error occurred.                                   |
+| Status | Meaning |
+| --- | --- |
+| `DETECTED` | Positive evidence was found. |
+| `NOT_DETECTED` | The check ran successfully but found no supported evidence. |
+| `NOT_AVAILABLE` | GitHub does not expose the feature in this repository or plan. |
+| `NOT_AUTHORIZED` | The current token does not have the permission needed to check it. |
+| `UNKNOWN` | The result could not be determined, for example because an API timed out. |
+| `ERROR` | An unexpected technical error occurred. |
 
 Supported signals are security policy, SBOM availability, Dependency Graph,
 Dependabot configuration, Code Scanning, a security contact, ForgeVault product
@@ -109,12 +149,12 @@ still completes.
 
 ## Required permissions
 
-| API or local signal                    | Minimum permission                           | Why                                                                  |
-| -------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------- |
-| Checked-out files                      | `contents: read` for `actions/checkout`      | Reads only the known policy, workflow, mapping and SBOM paths.       |
-| Asynchronous SBOM generation and fetch | `contents: read`                             | Requests and polls GitHub's current SBOM flow.                       |
-| Code Scanning alerts fallback          | `security-events: read`                      | Distinguishes API access from a missing Code Scanning result.        |
-| Optional ForgeVault sync               | A ForgeVault action token in a GitHub Secret | Sends only the documented sanitized summary when explicitly enabled. |
+| API or local signal | Minimum permission | Why |
+| --- | --- | --- |
+| Checked-out files | `contents: read` for `actions/checkout` | Reads only the known policy, workflow, mapping and SBOM paths. |
+| Asynchronous SBOM generation and fetch | `contents: read` | Requests and polls GitHub's current SBOM flow. |
+| Code Scanning alerts fallback | `security-events: read` | Distinguishes API access from a missing Code Scanning result. |
+| Optional ForgeVault sync | A ForgeVault action token in a GitHub Secret | Sends only the documented sanitized summary when explicitly enabled. |
 
 No write permission is required. See the full [token permission map](docs/GITHUB_TOKEN_PERMISSIONS.md).
 
@@ -176,15 +216,17 @@ See the exact payload in [PRIVACY_AND_SYNC.md](docs/PRIVACY_AND_SYNC.md).
 The free Action provides useful repository evidence. ForgeVault Pro operates at
 the product level:
 
-| Free Action                         | ForgeVault Pro                            |
-| ----------------------------------- | ----------------------------------------- |
-| Repository checks                   | Product mapping across repositories       |
-| Local, private-by-default execution | Security signal assessment                |
-| GitHub Job Summary                  | Human-reviewed CRA case workflows         |
-| Basic remediation guidance          | Evidence timelines and report preparation |
-| Optional sanitized sync             | Immutable incident and audit history      |
+| Free Action | ForgeVault Pro |
+| --- | --- |
+| Repository checks | Product mapping across repositories |
+| Local, private-by-default execution | Security signal assessment |
+| GitHub Job Summary | Human-reviewed CRA case workflows |
+| Basic remediation guidance | Evidence timelines and report preparation |
+| Optional sanitized sync | Immutable incident and audit history |
 
-Need product-level CRA operations? [Open ForgeVault Pro →](https://forge-vault-self.vercel.app/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_readiness)
+Ready to rehearse the workflow? [Run a CRA incident drill →](https://forge-vault-self.vercel.app/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_incident_drill)
+
+Prefer to explore first? [Open ForgeVault](https://forge-vault-self.vercel.app/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_readiness)
 
 The free Action does not start a statutory clock, decide reportability or submit
 anything to ENISA. Those decisions stay with the manufacturer and the team's
@@ -192,22 +234,22 @@ human review process.
 
 ## Inputs
 
-| Input      | Required | Default                       | Description                                                             |
-| ---------- | -------- | ----------------------------- | ----------------------------------------------------------------------- |
-| `sync`     | No       | `false`                       | Explicitly enable sanitized ForgeVault synchronization.                 |
-| `token`    | No       | —                             | ForgeVault action token, used only with `sync: true`.                   |
-| `endpoint` | No       | Production ingestion endpoint | Approved ForgeVault ingestion endpoint override.                        |
-| `product`  | No       | —                             | ForgeVault product identifier for an opt-in sync.                       |
-| `fail-on`  | No       | `none`                        | `none`, `error`, `gap` or `unknown`; controls optional workflow gating. |
+| Input | Required | Default | Description |
+| --- | --- | --- | --- |
+| `sync` | No | `false` | Explicitly enable sanitized ForgeVault synchronization. |
+| `token` | No | — | ForgeVault action token, used only with `sync: true`. |
+| `endpoint` | No | Production ingestion endpoint | Approved ForgeVault ingestion endpoint override. |
+| `product` | No | — | ForgeVault product identifier for an opt-in sync. |
+| `fail-on` | No | `none` | `none`, `error`, `gap` or `unknown`; controls optional workflow gating. |
 
 ## Outputs
 
-| Output           | Description                                                      |
-| ---------------- | ---------------------------------------------------------------- |
-| `detected-count` | Number of checks with `DETECTED` evidence.                       |
-| `gap-count`      | Number of `NOT_DETECTED` checks.                                 |
-| `unknown-count`  | Number of `NOT_AVAILABLE`, `NOT_AUTHORIZED` or `UNKNOWN` checks. |
-| `report-json`    | Compact machine-readable report with `schema_version`.           |
+| Output | Description |
+| --- | --- |
+| `detected-count` | Number of checks with `DETECTED` evidence. |
+| `gap-count` | Number of `NOT_DETECTED` checks. |
+| `unknown-count` | Number of `NOT_AVAILABLE`, `NOT_AUTHORIZED` or `UNKNOWN` checks. |
+| `report-json` | Compact machine-readable report with `schema_version`. |
 
 The local `readiness.json` file contains the same report for later workflow
 steps. It does not include a `cra-compliant` boolean or a legal score.
@@ -220,6 +262,9 @@ The Action uses GitHub's asynchronous `generate-report` → `fetch-report` flow,
 waits only for a bounded interval and does not use the closing synchronous
 endpoint. Retry the workflow if the report is still processing. A `403` is
 `NOT_AUTHORIZED`; a `404` is `NOT_AVAILABLE`, not proof that an SBOM is missing.
+Temporary GitHub 5xx/API outages are reported as `UNKNOWN` / **Unable to verify**
+so a transient service state is not confused with a genuinely unavailable
+repository feature.
 
 ### A check is `NOT_AUTHORIZED`
 
@@ -246,6 +291,8 @@ endpoint is unavailable. Never paste the token into a workflow log or issue.
 Please use [GitHub private vulnerability reporting](SECURITY.md) for security
 issues. Do not open a public issue with secrets, private repository data or
 unreleased vulnerability details.
+
+> If ForgeVault helped you spot a CRA-readiness gap, a ⭐ helps other software teams discover it.
 
 ## Limitations
 
