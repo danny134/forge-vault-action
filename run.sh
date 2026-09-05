@@ -12,7 +12,7 @@ readonly FORGEVAULT_APP_URL_DEFAULT='https://forge-vault-self.vercel.app'
 readonly GITHUB_API_VERSION='2026-03-10'
 readonly DEFAULT_HTTP_TIMEOUT_SECONDS='12'
 readonly DEFAULT_SBOM_MAX_WAIT_SECONDS='10'
-readonly DEFAULT_SBOM_POLL_INTERVAL_SECONDS='1'
+readonly DEFAULT_SBOM_POLL_INTERVAL_SECONDS='1'; readonly CRA_ARTICLE_14_CUTOFF='2026-09-11'
 
 GH_TOKEN="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
 GITHUB_API_ROOT="${GITHUB_API_URL:-https://api.github.com}"
@@ -685,7 +685,7 @@ EOF
   summary_line ''
 }
 
-summary_line '# ForgeVault CRA Readiness'
+cra_article_14_timing_line() { local current_date; current_date="$(date -u '+%Y-%m-%d')"; if [[ "$current_date" < "$CRA_ARTICLE_14_CUTOFF" ]]; then printf '%s' 'CRA Article 14 reporting obligations start 11 September 2026.'; else printf '%s' 'CRA Article 14 reporting obligations are now in force.'; fi; }; summary_line '# ForgeVault CRA Readiness'
 summary_line ''
 summary_line '> Cyber Resilience Act readiness checks for GitHub repositories.'
 summary_line ''
@@ -788,11 +788,11 @@ else
   summary_line '> Local readiness completed, but the optional sync was not configured. No request was sent to ForgeVault.'
 fi
 summary_line ''
-summary_line '## Go beyond repository readiness'
+summary_line '## CRA Article 14 context'; summary_line ''; summary_line "> **$(cra_article_14_timing_line)**"; summary_line "- **Current readiness gaps:** ${GAP_COUNT} operational gaps; ${UNKNOWN_COUNT} checks could not be verified; ${ERROR_COUNT} technical errors."; summary_line ''; summary_line '## Go beyond repository readiness'
 summary_line ''
 summary_line 'ForgeVault Pro connects repositories to software products and adds security-signal assessment, 24h/72h CRA case workflows, engineering evidence timelines, reporting preparation and immutable case history.'
 summary_line ''
-summary_line "[Open ForgeVault Pro →](${FORGEVAULT_APP_URL%/}/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_readiness)"
+summary_line "[Run a CRA incident drill in ForgeVault →](${FORGEVAULT_APP_URL%/}/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_incident_drill)"; summary_line "[Open ForgeVault →](${FORGEVAULT_APP_URL%/}/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_readiness)"
 summary_line ''
 summary_line '> ForgeVault CRA Readiness detects technical and operational signals. It does not determine legal CRA applicability, reportability or compliance.'
 
