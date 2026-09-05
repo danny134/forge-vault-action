@@ -114,8 +114,14 @@ if ! bash -n "$ACTION"; then
   fail 'action runner has invalid bash syntax'
 fi
 
-if grep -R -E 'dependency-graph/sbom(["?[:space:]]|$)' "$ACTION_ROOT" --include='*.sh' --include='action.yml' >/dev/null 2>&1; then
-  fail 'deprecated synchronous SBOM endpoint is present in production action files'
+SCAN_PATHS=("$ACTION_ROOT")
+if [ -d "$ROOT/supabase/functions" ]; then
+  SCAN_PATHS+=("$ROOT/supabase/functions")
+fi
+if rg -n -e 'dependency-graph/sbom(["?[:space:]]|$)' \
+  "${SCAN_PATHS[@]}" \
+  --glob '*.sh' --glob '*.ts' --glob 'action.yml' >/dev/null 2>&1; then
+  fail 'deprecated synchronous SBOM endpoint is present in production code'
 fi
 
 run_case good sbom_ready false
@@ -127,7 +133,8 @@ assert_eq '0' "$(report_count gaps)" 'ready fixture gap count'
 assert_eq '0' "$(report_count unknown)" 'ready fixture unknown count'
 assert_contains 'Cyber Resilience Act' "$RUN_SUMMARY" 'summary should expand CRA'
 assert_contains 'Private by default' "$RUN_SUMMARY" 'summary should contain the trust statement'
-assert_contains 'CRA Article 14 reporting obligations' "$RUN_SUMMARY" 'summary should contain the CRA timing context'; assert_contains 'Run a CRA incident drill in ForgeVault' "$RUN_SUMMARY" 'summary should contain the incident drill CTA'
+assert_contains 'CRA Article 14 reporting obligations' "$RUN_SUMMARY" 'summary should contain the CRA timing context'
+assert_contains 'Run a CRA incident drill in ForgeVault' "$RUN_SUMMARY" 'summary should contain the incident drill CTA'
 assert_not_contains 'ingest-readiness' "$RUN_CALLS" 'sync=false must not call ForgeVault'
 
 run_case minimal sbom_processing false

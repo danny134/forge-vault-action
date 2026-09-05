@@ -1,8 +1,8 @@
 # SBOM handling
 
 ForgeVault supports GitHub-generated SBOM evidence, SPDX and CycloneDX input.
-The free Action validates a local root artifact when present and otherwise
-uses GitHub's current asynchronous SBOM flow:
+The free Action and the hosted SBOM worker use GitHub's current asynchronous
+SBOM flow:
 
 1. request generation;
 2. poll `fetch-report/{uuid}` for a bounded interval;
@@ -15,6 +15,6 @@ path in its private evidence model, but it does not expose that artifact to the
 free Action's optional sanitized sync.
 
 GitHub's synchronous `GET /repos/{owner}/{repo}/dependency-graph/sbom` endpoint
-is closing down on 2026-11-13. Production Action logic uses only
+is closing down on 2026-11-13. Production Action and worker logic use only
 `generate-report` and `fetch-report`; see
 [`GITHUB_API_COMPATIBILITY.md`](GITHUB_API_COMPATIBILITY.md).

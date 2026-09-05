@@ -12,7 +12,8 @@ readonly FORGEVAULT_APP_URL_DEFAULT='https://forge-vault-self.vercel.app'
 readonly GITHUB_API_VERSION='2026-03-10'
 readonly DEFAULT_HTTP_TIMEOUT_SECONDS='12'
 readonly DEFAULT_SBOM_MAX_WAIT_SECONDS='10'
-readonly DEFAULT_SBOM_POLL_INTERVAL_SECONDS='1'; readonly CRA_ARTICLE_14_CUTOFF='2026-09-11'
+readonly DEFAULT_SBOM_POLL_INTERVAL_SECONDS='1'
+readonly CRA_ARTICLE_14_CUTOFF='2026-09-11'
 
 GH_TOKEN="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
 GITHUB_API_ROOT="${GITHUB_API_URL:-https://api.github.com}"
@@ -445,10 +446,25 @@ check_sbom() {
           set_sbom_result 'UNKNOWN' 'The temporary SBOM download URL could not be reached.' 'Temporary SBOM download request did not complete' 'github-rest-api' 'Retry the workflow; the temporary URL is short-lived.' 'https://docs.github.com/en/rest/dependency-graph/sboms'
           return 0
         fi
-        if [ "$DOWNLOAD_STATUS" != '200' ]; then
-        case "$DOWNLOAD_STATUS" in 403) set_sbom_result 'NOT_AUTHORIZED' 'GitHub denied access to the temporary SBOM download.' 'Temporary download returned 403' 'github-rest-api' 'Grant contents: read to the job token and retry.' 'https://docs.github.com/en/rest/dependency-graph/sboms' ;; 404) set_sbom_result 'NOT_AVAILABLE' 'GitHub generated the report but its temporary download is no longer available.' 'Temporary download returned 404' 'github-rest-api' 'Request a fresh report by rerunning the workflow.' 'https://docs.github.com/en/rest/dependency-graph/sboms' ;; 5*) set_sbom_result 'UNKNOWN' 'The temporary SBOM download could not be verified because GitHub returned a temporary server error.' "temporary SBOM download returned $DOWNLOAD_STATUS" 'github-rest-api' 'Retry the workflow to request a fresh SBOM report.' 'https://www.githubstatus.com/' ;; *) set_sbom_result 'ERROR' 'GitHub returned an unexpected response for the temporary SBOM download.' "temporary SBOM download returned $DOWNLOAD_STATUS" 'github-rest-api' 'Inspect the GitHub API response and rerun the workflow.' 'https://docs.github.com/en/rest/dependency-graph/sboms' ;; esac
-          return 0
-        fi
+        case "$DOWNLOAD_STATUS" in
+          403)
+            set_sbom_result 'NOT_AUTHORIZED' 'GitHub denied access to the temporary SBOM download.' 'Temporary download returned 403' 'github-rest-api' 'Grant contents: read to the job token and retry.' 'https://docs.github.com/en/rest/dependency-graph/sboms'
+            return 0
+            ;;
+          404)
+            set_sbom_result 'NOT_AVAILABLE' 'GitHub generated the report but its temporary download is no longer available.' 'Temporary download returned 404' 'github-rest-api' 'Request a fresh report by rerunning the workflow.' 'https://docs.github.com/en/rest/dependency-graph/sboms'
+            return 0
+            ;;
+          5*)
+            set_sbom_result 'UNKNOWN' 'The temporary SBOM download could not be verified because GitHub returned a temporary server error.' "temporary SBOM download returned $DOWNLOAD_STATUS" 'github-rest-api' 'Retry the workflow to request a fresh SBOM report.' 'https://www.githubstatus.com/'
+            return 0
+            ;;
+          200) ;;
+          *)
+            set_sbom_result 'ERROR' 'GitHub returned an unexpected response for the temporary SBOM download.' "temporary SBOM download returned $DOWNLOAD_STATUS" 'github-rest-api' 'Inspect the GitHub API response and rerun the workflow.' 'https://docs.github.com/en/rest/dependency-graph/sboms'
+            return 0
+            ;;
+        esac
         if jq -e 'type == "object" and ((.spdxVersion? != null) or (.bomFormat? != null))' "$DOWNLOAD_BODY" >/dev/null 2>&1; then
           set_sbom_result 'DETECTED' 'GitHub generated an SPDX-compatible SBOM successfully.' 'Asynchronous generate-report → fetch-report → temporary download completed' 'github-rest-api' 'Review the SBOM as release evidence; this Action does not upload its contents to ForgeVault.' 'https://docs.github.com/en/rest/dependency-graph/sboms'
         else
@@ -685,7 +701,17 @@ EOF
   summary_line ''
 }
 
-cra_article_14_timing_line() { local current_date; current_date="$(date -u '+%Y-%m-%d')"; if [[ "$current_date" < "$CRA_ARTICLE_14_CUTOFF" ]]; then printf '%s' 'CRA Article 14 reporting obligations start 11 September 2026.'; else printf '%s' 'CRA Article 14 reporting obligations are now in force.'; fi; }; summary_line '# ForgeVault CRA Readiness'
+cra_article_14_timing_line() {
+  local current_date
+  current_date="$(date -u '+%Y-%m-%d')"
+  if [[ "$current_date" < "$CRA_ARTICLE_14_CUTOFF" ]]; then
+    printf '%s' 'CRA Article 14 reporting obligations start 11 September 2026.'
+  else
+    printf '%s' 'CRA Article 14 reporting obligations are now in force.'
+  fi
+}
+
+summary_line '# ForgeVault CRA Readiness'
 summary_line ''
 summary_line '> Cyber Resilience Act readiness checks for GitHub repositories.'
 summary_line ''
@@ -722,6 +748,12 @@ $(jq -r '.[] | select(.status != "DETECTED") | [.title, .status, .remediation, .
 EOF
   summary_line ''
 fi
+
+summary_line '## CRA Article 14 context'
+summary_line ''
+summary_line "> **$(cra_article_14_timing_line)**"
+summary_line "- **Current readiness gaps:** ${GAP_COUNT} operational gaps; ${UNKNOWN_COUNT} checks could not be verified; ${ERROR_COUNT} technical errors."
+summary_line ''
 
 SYNC_INPUT_LOWER="$(printf '%s' "$SYNC_INPUT" | tr '[:upper:]' '[:lower:]')"
 SYNC_STATE='not-requested'
@@ -788,11 +820,12 @@ else
   summary_line '> Local readiness completed, but the optional sync was not configured. No request was sent to ForgeVault.'
 fi
 summary_line ''
-summary_line '## CRA Article 14 context'; summary_line ''; summary_line "> **$(cra_article_14_timing_line)**"; summary_line "- **Current readiness gaps:** ${GAP_COUNT} operational gaps; ${UNKNOWN_COUNT} checks could not be verified; ${ERROR_COUNT} technical errors."; summary_line ''; summary_line '## Go beyond repository readiness'
+summary_line '## Go beyond repository readiness'
 summary_line ''
 summary_line 'ForgeVault Pro connects repositories to software products and adds security-signal assessment, 24h/72h CRA case workflows, engineering evidence timelines, reporting preparation and immutable case history.'
 summary_line ''
-summary_line "[Run a CRA incident drill in ForgeVault →](${FORGEVAULT_APP_URL%/}/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_incident_drill)"; summary_line "[Open ForgeVault →](${FORGEVAULT_APP_URL%/}/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_readiness)"
+summary_line "[Run a CRA incident drill in ForgeVault →](${FORGEVAULT_APP_URL%/}/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_incident_drill)"
+summary_line "[Open ForgeVault →](${FORGEVAULT_APP_URL%/}/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_readiness)"
 summary_line ''
 summary_line '> ForgeVault CRA Readiness detects technical and operational signals. It does not determine legal CRA applicability, reportability or compliance.'
 
