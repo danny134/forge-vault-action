@@ -151,7 +151,11 @@ still completes.
 
 | API or local signal | Minimum permission | Why |
 | --- | --- | --- |
-| Checked-out files | `contents: read` for `actions/checkout` | Reads only the known policy, workflow, mapping and SBOM paths. |
+| Checked-out files | `contents: read` for `actions/checkout` | Reads only the known policy, workflow, mapping and SBOM paths. |show the output in seconds, before you read the implementation details.
+
+![ForgeVault GitHub Job Summary example](assets/forge-vault-job-summary.png)
+
+If images are blocked, a compact sample excerpt is available:
 | Asynchronous SBOM generation and fetch | `contents: read` | Requests and polls GitHub's current SBOM flow. |
 | Code Scanning alerts fallback | `security-events: read` | Distinguishes API access from a missing Code Scanning result. |
 | Optional ForgeVault sync | A ForgeVault action token in a GitHub Secret | Sends only the documented sanitized summary when explicitly enabled. |
