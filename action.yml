@@ -2,7 +2,7 @@ name: 'ForgeVault CRA Readiness'
 description: 'Cyber Resilience Act readiness checks for GitHub repositories.'
 branding:
   icon: 'shield'
-  color: 'gray-dark'
+  color: 'yellow'
 inputs:
   sync:
     description: 'Opt-in: send the sanitized readiness summary to ForgeVault.'
