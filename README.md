@@ -33,12 +33,12 @@ ForgeVault Pro adds the product-level operating layer:
 - reporting preparation
 - immutable audit history
 
-| Free Action | ForgeVault Pro |
-| --- | --- |
-| Repository-level checks | Product mapping across repositories |
-| Private GitHub Job Summary | Security signal assessment |
-| Evidence gaps and next steps | 24h/72h workflows and evidence timelines |
-| Optional sanitized sync | Reporting preparation and immutable audit history |
+| Free Action                  | ForgeVault Pro                                    |
+| ---------------------------- | ------------------------------------------------- |
+| Repository-level checks      | Product mapping across repositories               |
+| Private GitHub Job Summary   | Security signal assessment                        |
+| Evidence gaps and next steps | 24h/72h workflows and evidence timelines          |
+| Optional sanitized sync      | Reporting preparation and immutable audit history |
 
 ## See a real GitHub Job Summary
 
@@ -47,9 +47,9 @@ ForgeVault Pro adds the product-level operating layer:
 The example below is a successful ForgeVault Action result. It is designed to
 show the output in seconds, before you read the implementation details.
 
+![ForgeVault GitHub Job Summary example](assets/forge-vault-job-summary.png)
 
-
-
+If images are blocked, a compact text excerpt is available:
 
 ```text
 FORGEVAULT CRA READINESS
@@ -86,14 +86,14 @@ The free Action is the repository entry point to [ForgeVault Pro](https://forge-
 
 The Action uses one canonical result model for every check:
 
-| Status | Meaning |
-| --- | --- |
-| `DETECTED` | Positive evidence was found. |
-| `NOT_DETECTED` | The check ran successfully but found no supported evidence. |
-| `NOT_AVAILABLE` | GitHub does not expose the feature in this repository or plan. |
-| `NOT_AUTHORIZED` | The current token does not have the permission needed to check it. |
-| `UNKNOWN` | The result could not be determined, for example because an API timed out. |
-| `ERROR` | An unexpected technical error occurred. |
+| Status           | Meaning                                                                   |
+| ---------------- | ------------------------------------------------------------------------- |
+| `DETECTED`       | Positive evidence was found.                                              |
+| `NOT_DETECTED`   | The check ran successfully but found no supported evidence.               |
+| `NOT_AVAILABLE`  | GitHub does not expose the feature in this repository or plan.            |
+| `NOT_AUTHORIZED` | The current token does not have the permission needed to check it.        |
+| `UNKNOWN`        | The result could not be determined, for example because an API timed out. |
+| `ERROR`          | An unexpected technical error occurred.                                   |
 
 Supported signals are security policy, SBOM availability, Dependency Graph,
 Dependabot configuration, Code Scanning, a security contact, ForgeVault product
@@ -149,16 +149,12 @@ still completes.
 
 ## Required permissions
 
-| API or local signal | Minimum permission | Why |
-| --- | --- | --- |
-| Checked-out files | `contents: read` for `actions/checkout` | Reads only the known policy, workflow, mapping and SBOM paths. |show the output in seconds, before you read the implementation details.
-
-![ForgeVault GitHub Job Summary example](assets/forge-vault-job-summary.png)
-
-If images are blocked, a compact sample excerpt is available:
-| Asynchronous SBOM generation and fetch | `contents: read` | Requests and polls GitHub's current SBOM flow. |
-| Code Scanning alerts fallback | `security-events: read` | Distinguishes API access from a missing Code Scanning result. |
-| Optional ForgeVault sync | A ForgeVault action token in a GitHub Secret | Sends only the documented sanitized summary when explicitly enabled. |
+| API or local signal                    | Minimum permission                           | Why                                                                  |
+| -------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------- |
+| Checked-out files                      | `contents: read` for `actions/checkout`      | Reads only the known policy, workflow, mapping and SBOM paths.       |
+| Asynchronous SBOM generation and fetch | `contents: read`                             | Requests and polls GitHub's current SBOM flow.                       |
+| Code Scanning alerts fallback          | `security-events: read`                      | Distinguishes API access from a missing Code Scanning result.        |
+| Optional ForgeVault sync               | A ForgeVault action token in a GitHub Secret | Sends only the documented sanitized summary when explicitly enabled. |
 
 No write permission is required. See the full [token permission map](docs/GITHUB_TOKEN_PERMISSIONS.md).
 
@@ -220,13 +216,13 @@ See the exact payload in [PRIVACY_AND_SYNC.md](docs/PRIVACY_AND_SYNC.md).
 The free Action provides useful repository evidence. ForgeVault Pro operates at
 the product level:
 
-| Free Action | ForgeVault Pro |
-| --- | --- |
-| Repository checks | Product mapping across repositories |
-| Local, private-by-default execution | Security signal assessment |
-| GitHub Job Summary | Human-reviewed CRA case workflows |
-| Basic remediation guidance | Evidence timelines and report preparation |
-| Optional sanitized sync | Immutable incident and audit history |
+| Free Action                         | ForgeVault Pro                            |
+| ----------------------------------- | ----------------------------------------- |
+| Repository checks                   | Product mapping across repositories       |
+| Local, private-by-default execution | Security signal assessment                |
+| GitHub Job Summary                  | Human-reviewed CRA case workflows         |
+| Basic remediation guidance          | Evidence timelines and report preparation |
+| Optional sanitized sync             | Immutable incident and audit history      |
 
 Ready to rehearse the workflow? [Run a CRA incident drill →](https://forge-vault-self.vercel.app/?utm_source=github&utm_medium=marketplace_action&utm_campaign=cra_incident_drill)
 
@@ -238,22 +234,22 @@ human review process.
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `sync` | No | `false` | Explicitly enable sanitized ForgeVault synchronization. |
-| `token` | No | — | ForgeVault action token, used only with `sync: true`. |
-| `endpoint` | No | Production ingestion endpoint | Approved ForgeVault ingestion endpoint override. |
-| `product` | No | — | ForgeVault product identifier for an opt-in sync. |
-| `fail-on` | No | `none` | `none`, `error`, `gap` or `unknown`; controls optional workflow gating. |
+| Input      | Required | Default                       | Description                                                             |
+| ---------- | -------- | ----------------------------- | ----------------------------------------------------------------------- |
+| `sync`     | No       | `false`                       | Explicitly enable sanitized ForgeVault synchronization.                 |
+| `token`    | No       | —                             | ForgeVault action token, used only with `sync: true`.                   |
+| `endpoint` | No       | Production ingestion endpoint | Approved ForgeVault ingestion endpoint override.                        |
+| `product`  | No       | —                             | ForgeVault product identifier for an opt-in sync.                       |
+| `fail-on`  | No       | `none`                        | `none`, `error`, `gap` or `unknown`; controls optional workflow gating. |
 
 ## Outputs
 
-| Output | Description |
-| --- | --- |
-| `detected-count` | Number of checks with `DETECTED` evidence. |
-| `gap-count` | Number of `NOT_DETECTED` checks. |
-| `unknown-count` | Number of `NOT_AVAILABLE`, `NOT_AUTHORIZED` or `UNKNOWN` checks. |
-| `report-json` | Compact machine-readable report with `schema_version`. |
+| Output           | Description                                                      |
+| ---------------- | ---------------------------------------------------------------- |
+| `detected-count` | Number of checks with `DETECTED` evidence.                       |
+| `gap-count`      | Number of `NOT_DETECTED` checks.                                 |
+| `unknown-count`  | Number of `NOT_AVAILABLE`, `NOT_AUTHORIZED` or `UNKNOWN` checks. |
+| `report-json`    | Compact machine-readable report with `schema_version`.           |
 
 The local `readiness.json` file contains the same report for later workflow
 steps. It does not include a `cra-compliant` boolean or a legal score.
@@ -266,9 +262,9 @@ The Action uses GitHub's asynchronous `generate-report` → `fetch-report` flow,
 waits only for a bounded interval and does not use the closing synchronous
 endpoint. Retry the workflow if the report is still processing. A `403` is
 `NOT_AUTHORIZED`; a `404` is `NOT_AVAILABLE`, not proof that an SBOM is missing.
-Temporary GitHub 5xx/API outages are reported as `UNKNOWN` / **Unable to verify**
-so a transient service state is not confused with a genuinely unavailable
-repository feature.
+Temporary GitHub 5xx/API outages are reported as `UNKNOWN` / **Unable to
+verify**, so a transient service state is not confused with a genuinely
+unavailable repository feature.
 
 ### A check is `NOT_AUTHORIZED`
 
