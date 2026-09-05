@@ -47,7 +47,7 @@ ForgeVault Pro adds the product-level operating layer:
 The example below is a successful ForgeVault Action result. It is designed to
 show the output in seconds, before you read the implementation details.
 
-![ForgeVault GitHub Job Summary example](assets/forge-vault-job-summary.png)
+![ForgeVault GitHub Job Summary example](assets/forge-vault-job-summary-v2.png)
 
 If images are blocked, a compact text excerpt is available:
 
